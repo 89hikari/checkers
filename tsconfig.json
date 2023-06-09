@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "ESNext",
         "paths": {
-            "@*": [
+            "app*": [
                 "./src/*"
             ]
         },
