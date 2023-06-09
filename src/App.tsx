@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import Board from './components/Board'
 
 const App = () => {
     return (
-       <h1>App works</h1>
+       <Board />
     )
 }
 
