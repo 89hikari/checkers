@@ -2,7 +2,9 @@ import { create, StateCreator } from "zustand";
 import { devtools } from "zustand/middleware";
 
 interface Slice {
-    board: string[][]
+    board: string[][],
+    currentPlayer: string,
+    move: (newRow: number, newCell: number, initialRow: number, initialCell: number) => void
 }
 
 const createSlice: StateCreator<Slice, [["zustand/devtools", never]], []> = (set, get) => ({
@@ -15,7 +17,15 @@ const createSlice: StateCreator<Slice, [["zustand/devtools", never]], []> = (set
         ['b', '', 'b', '', 'b', '', 'b', ''],
         ['', 'b', '', 'b', '', 'b', '', 'b'],
         ['b', '', 'b', '', 'b', '', 'b', '']
-    ]
+    ],
+    currentPlayer: 'w',
+    move: (newRow: number, newCell: number, initialRow: number, initialCell: number) => {
+        const board = get().board;
+        board[initialRow][initialCell] = '';
+        board[newRow][newCell] = get().currentPlayer;
+        set({ board: board });
+        set({ currentPlayer: get().currentPlayer === 'w' ? 'b' : 'w' });
+    }
 })
 
 const useStore = create<Slice>()(devtools((...a) => ({
