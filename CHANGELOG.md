@@ -1,3 +1,14 @@
+#### 0.0.1 (2023-06-10)
+
+##### New Features
+
+* **board:**
+  *  pieces placed ([d4397a3a](https://github.com/89hikari/checkers/commit/d4397a3a8f141b0ddbcaf69dbff34a64862f377f))
+
+##### Bug Fixes
+
+* **styles:**  piece centred ([616b72e2](https://github.com/89hikari/checkers/commit/616b72e2eea17aa9399098be104136cd476fe44d))
+
 #### 0.0.1 (2023-06-09)
 
 ##### Chores
