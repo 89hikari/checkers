@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import useStore from 'app/hooks/useStore';
 import classNames from 'classnames';
 import styles from './assets/styles/Board.module.scss';
+import { Typography } from 'antd';
 
 const Board = () => {
     const board = useStore(state => state.board);
@@ -17,13 +18,28 @@ const Board = () => {
         if (board[rowIndex][positionIntex] !== currentPlayer) return;
         const availibleRowToMove = currentPlayer === 'b' ? rowIndex - 1 : rowIndex + 1;
         const availiblePos = [positionIntex - 1, positionIntex + 1];
-        setNewRow(availibleRowToMove);
-        console.log(availiblePos)
-        if (availiblePos.map(el => board[availibleRowToMove][el]).filter(el => !!el).length <= 1) {
+        const availiblePosItems = availiblePos.map(el => board[availibleRowToMove][el]);
+
+        if (availiblePosItems.filter(el => !!el).length <= 2) {
+            if (availiblePosItems.filter(el => el === (currentPlayer === 'b' ? 'w' : 'b')).length != 0) {
+                availiblePos.forEach((el) => {
+                    getNextLayerAvailibleItems(rowIndex, availibleRowToMove, positionIntex, el);
+                })
+                return;
+            }
+            setNewRow(availibleRowToMove);
             setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8));
             return;
         }
+
         setNewRow(undefined);
+        setNewCell(undefined);
+        setCurRow(undefined);
+        setCurCell(undefined);
+    }
+
+    const getNextLayerAvailibleItems = (oldRowIndex: number, newRowIndex: number, oldPosIndex: number, nexPosIndex: number) => {
+        console.log(oldRowIndex, newRowIndex, oldPosIndex, nexPosIndex)
     }
 
     const setPieceClassnames = (pieceVal: string, row: number, cell: number) => {
@@ -37,7 +53,7 @@ const Board = () => {
     }
 
     useEffect(() => {
-        if (newRow && newCell && curRow && curCell) {
+        if (newRow !== undefined && newCell !== undefined && curRow !== undefined && curCell !== undefined) {
             move(newRow, newCell, curRow, curCell);
             setNewRow(undefined);
             setNewCell(undefined);
@@ -52,20 +68,22 @@ const Board = () => {
         if (availiblePositions?.some(el => el === cell)) {
             setNewCell(cell);
             return;
-        } else {
-            setCurCell(cell);
-            setCurRow(row);
-            getAvailiblePositions(row, cell);
         }
+        setCurCell(cell);
+        setCurRow(row);
+        getAvailiblePositions(row, cell);
     }
 
     return (
-        <div className={styles.board}>
-            {board.map((row, i) =>
-                <div key={i} className={styles.row}>
-                    {row.map((cell, j) => <div key={`${cell}${j}`} onClick={() => detectPieceAction(i, j)} className={setPieceClassnames(cell, i, j)}></div>)}
-                </div>
-            )}
+        <div className={styles.wrapper}>
+            <div className={styles.board}>
+                {board.map((row, i) =>
+                    <div key={i} className={styles.row}>
+                        {row.map((cell, j) => <div key={`${cell}${j}`} onClick={() => detectPieceAction(i, j)} className={setPieceClassnames(cell, i, j)}></div>)}
+                    </div>
+                )}
+            </div>
+            <Typography.Title className={styles.title}>{currentPlayer === 'w' ? "Reds" : "Blacks"} turn</Typography.Title>
         </div>
     )
 }

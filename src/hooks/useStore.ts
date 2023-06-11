@@ -18,7 +18,7 @@ const createSlice: StateCreator<Slice, [["zustand/devtools", never]], []> = (set
         ['', 'b', '', 'b', '', 'b', '', 'b'],
         ['b', '', 'b', '', 'b', '', 'b', '']
     ],
-    currentPlayer: 'w',
+    currentPlayer: 'b',
     move: (newRow: number, newCell: number, initialRow: number, initialCell: number) => {
         const board = get().board;
         board[initialRow][initialCell] = '';
