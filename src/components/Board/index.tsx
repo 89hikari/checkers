@@ -13,18 +13,26 @@ const Board = () => {
     const [curRow, setCurRow] = useState<number>();
     const [curCell, setCurCell] = useState<number>();
     const [availiblePositions, setAvailiblePositions] = useState<number[]>();
+    
+    const blacksScore = 12 - board.map(el => el.map(piece => piece === 'w' ? 1 : 0).filter(p => !!p)).reduce((a, b) => [...a, ...b]).length;
+    const redsScore = 12 - board.map(el => el.map(piece => piece === 'b' ? 1 : 0).filter(p => !!p)).reduce((a, b) => [...a, ...b]).length;
 
     const getAvailiblePositions = (rowIndex: number, positionIntex: number) => {
         if (board[rowIndex][positionIntex] !== currentPlayer) return;
         const availibleRowToMove = currentPlayer === 'b' ? rowIndex - 1 : rowIndex + 1;
         const availiblePos = [positionIntex - 1, positionIntex + 1];
-        const availiblePosItems = availiblePos.map(el => board[availibleRowToMove][el]);
+        let availiblePosItems: string[] = [];
+
+        try {
+            availiblePosItems = availiblePos.map(el => board[availibleRowToMove][el])
+        } catch (error) { return; }
 
         if (availiblePosItems.filter(el => !!el).length <= 2) {
             if (availiblePosItems.filter(el => el === (currentPlayer === 'b' ? 'w' : 'b')).length != 0) {
-                availiblePos.forEach((el) => {
-                    getNextLayerAvailibleItems(rowIndex, availibleRowToMove, positionIntex, el);
-                })
+                for (let i = 0; i < availiblePos.length; i++) {
+                    let checkCanEat = getNextLayerAvailibleItems(rowIndex, availibleRowToMove, positionIntex, availiblePos[i]);
+                    if (!!checkCanEat) break;
+                }
                 return;
             }
             setNewRow(availibleRowToMove);
@@ -39,7 +47,21 @@ const Board = () => {
     }
 
     const getNextLayerAvailibleItems = (oldRowIndex: number, newRowIndex: number, oldPosIndex: number, nexPosIndex: number) => {
-        console.log(oldRowIndex, newRowIndex, oldPosIndex, nexPosIndex)
+        const nextRow = (newRowIndex < oldRowIndex ? newRowIndex - 1 : newRowIndex + 1);
+        const nextCell = (nexPosIndex < oldPosIndex ? nexPosIndex - 1 : nexPosIndex + 1);
+        try {
+            if (board[newRowIndex][nexPosIndex] === (currentPlayer === 'b' ? 'w' : 'b')) {
+                if (board[nextRow][nextCell] === '') {
+                    setNewRow(nextRow);
+                    setAvailiblePositions([nextCell]);
+                    return true;
+                }
+                return false;
+            }
+        } catch (error) { }
+
+        setNewRow(newRowIndex);
+        setAvailiblePositions([nexPosIndex]);
     }
 
     const setPieceClassnames = (pieceVal: string, row: number, cell: number) => {
@@ -76,12 +98,16 @@ const Board = () => {
 
     return (
         <div className={styles.wrapper}>
-            <div className={styles.board}>
-                {board.map((row, i) =>
-                    <div key={i} className={styles.row}>
-                        {row.map((cell, j) => <div key={`${cell}${j}`} onClick={() => detectPieceAction(i, j)} className={setPieceClassnames(cell, i, j)}></div>)}
-                    </div>
-                )}
+            <div className={styles.boarddata}>
+                <Typography.Title level={3} className={styles.title}>Reds: <br/>{redsScore}</Typography.Title>
+                <div className={styles.board}>
+                    {board.map((row, i) =>
+                        <div key={i} className={styles.row}>
+                            {row.map((cell, j) => <div key={`${cell}${j}`} onClick={() => detectPieceAction(i, j)} className={setPieceClassnames(cell, i, j)}></div>)}
+                        </div>
+                    )}
+                </div>
+                <Typography.Title level={3} className={styles.title}>Blacks: <br/>{blacksScore}</Typography.Title>
             </div>
             <Typography.Title className={styles.title}>{currentPlayer === 'w' ? "Reds" : "Blacks"} turn</Typography.Title>
         </div>

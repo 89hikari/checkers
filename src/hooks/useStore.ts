@@ -23,6 +23,14 @@ const createSlice: StateCreator<Slice, [["zustand/devtools", never]], []> = (set
         const board = get().board;
         board[initialRow][initialCell] = '';
         board[newRow][newCell] = get().currentPlayer;
+
+        const possibleEatenRow = Math.abs(newRow - initialRow) === 2;
+        const possibleEatenCell = Math.abs(newCell - initialCell) === 2;
+
+        if (possibleEatenRow && possibleEatenCell) {
+            board[newRow > initialRow ? newRow - 1 :  newRow + 1][newCell > initialCell ? newCell - 1 :  newCell + 1] = '';
+        }
+
         set({ board: board });
         set({ currentPlayer: get().currentPlayer === 'w' ? 'b' : 'w' });
     }
