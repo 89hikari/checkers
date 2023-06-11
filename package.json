@@ -7,7 +7,7 @@
     "start": "vite",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "build": "tsc && vite build --base=/",
+    "build": "tsc && vite build",
     "changelog": "changelog generate"
   },
   "repository": {
@@ -23,6 +23,7 @@
   "dependencies": {
     "antd": "^5.6.1",
     "classnames": "^2.3.2",
+    "firebase": "^9.22.2",
     "normalize.css": "^8.0.1",
     "qs": "^6.11.2",
     "react": "^18.2.0",
