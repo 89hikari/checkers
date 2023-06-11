@@ -38,7 +38,7 @@ const Board = () => {
                 return;
             }
             setNewRow(availibleRowToMove);
-            setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8));
+            setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && !!!board[availibleRowToMove][el]));
             return;
         }
     }
