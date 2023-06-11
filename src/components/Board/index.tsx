@@ -13,18 +13,20 @@ const Board = () => {
     const [curRow, setCurRow] = useState<number>();
     const [curCell, setCurCell] = useState<number>();
     const [availiblePositions, setAvailiblePositions] = useState<number[]>();
-    
+
     const blacksScore = 12 - board.map(el => el.map(piece => piece === 'w' ? 1 : 0).filter(p => !!p)).reduce((a, b) => [...a, ...b]).length;
     const redsScore = 12 - board.map(el => el.map(piece => piece === 'b' ? 1 : 0).filter(p => !!p)).reduce((a, b) => [...a, ...b]).length;
 
     const getAvailiblePositions = (rowIndex: number, positionIntex: number) => {
         if (board[rowIndex][positionIntex] !== currentPlayer) return;
+        setCurCell(positionIntex);
+        setCurRow(rowIndex);
         const availibleRowToMove = currentPlayer === 'b' ? rowIndex - 1 : rowIndex + 1;
         const availiblePos = [positionIntex - 1, positionIntex + 1];
         let availiblePosItems: string[] = [];
 
         try {
-            availiblePosItems = availiblePos.map(el => board[availibleRowToMove][el])
+            availiblePosItems = availiblePos.map(el => board[availibleRowToMove][el]).filter(el => el !== currentPlayer);
         } catch (error) { return; }
 
         if (availiblePosItems.filter(el => !!el).length <= 2) {
@@ -39,11 +41,6 @@ const Board = () => {
             setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8));
             return;
         }
-
-        setNewRow(undefined);
-        setNewCell(undefined);
-        setCurRow(undefined);
-        setCurCell(undefined);
     }
 
     const getNextLayerAvailibleItems = (oldRowIndex: number, newRowIndex: number, oldPosIndex: number, nexPosIndex: number) => {
@@ -87,12 +84,10 @@ const Board = () => {
 
 
     const detectPieceAction = (row: number, cell: number) => {
-        if (availiblePositions?.some(el => el === cell)) {
+        if (availiblePositions?.some(el => el === cell) && row === newRow) {
             setNewCell(cell);
             return;
         }
-        setCurCell(cell);
-        setCurRow(row);
         getAvailiblePositions(row, cell);
     }
 
