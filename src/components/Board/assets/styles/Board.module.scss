@@ -5,27 +5,38 @@
     .title {
         margin: 50px;
         text-align: center;
+        min-width: 100px;
     }
     .boarddata {
         display: flex;
         align-items: center;
     }
+    .reset {
+        margin: 20px auto;
+        width: 100%;
+        max-width: 100px;
+        text-align: center;
+        padding: 10px;
+        background-color: #ee8700;
+        cursor: pointer;
+        border-radius: 10px;
+    }
     .board {
-        width: 800px;
-        height: 800px;
+        width: 600px;
+        height: 600px;
         background: url('https://d3hp2os08tb528.cloudfront.net/checkers/images/darkwood.png');
         border: 10px solid #6b5238;
         border-radius: 20px;
         height: max-content;
         .row {
             width: 100%;
-            height: 100px;
+            height: 75px;
             display: flex;
             flex-direction: row;
             justify-content: space-between;
             .cell {
-                width: 100px;
-                height: 100px;
+                width: 75px;
+                height: 75px;
                 position: relative;
                 &:nth-child(2n + 1) {
                     background: url(https://d3hp2os08tb528.cloudfront.net/checkers/images/lightwood.png);
@@ -34,11 +45,11 @@
                     &::before {
                         position: absolute;
                         content: '';
-                        width: 60px;
-                        height: 60px;
+                        width: 40px;
+                        height: 40px;
                         border-radius: 50%;
-                        left: calc(50% - 33px);
-                        top: calc(50% - 33px);
+                        left: calc(50% - 22.5px);
+                        top: calc(50% - 22.5px);
                         background: #333;
                         border: 4px solid #000;
                         cursor: pointer;
@@ -51,18 +62,34 @@
                         background: #d00;
                         border: 4px solid #a00;
                     }
+                    &.boss::after {
+                        position: absolute;
+                        content: '';
+                        width: 25px;
+                        height: 25px;
+                        border-radius: 50%;
+                        left: calc(50% - 11.5px);
+                        top: calc(50% - 11.5px);
+                        background: white;
+                        cursor: pointer;
+                    }
                 }
-                &.selected::before {
+                &.possible_move::before {
                     position: absolute;
                     content: '';
-                    width: 60px;
-                    height: 60px;
+                    width: 40px;
+                    height: 40px;
                     border-radius: 50%;
-                    left: calc(50% - 33px);
-                    top: calc(50% - 33px);
+                    left: calc(50% - 22.5px);
+                    top: calc(50% - 22.5px);
                     background: transparent !important;
                     border: 4px solid white !important;
                     cursor: pointer;
+                }
+                &.selected::before {
+                    -webkit-box-shadow: 0px 0px 10px 9px rgba(255, 255, 255, 0.5);
+                    -moz-box-shadow: 0px 0px 10px 9px rgba(255, 255, 255, 0.5);
+                    box-shadow: 0px 0px 10px 9px rgba(255, 255, 255, 0.5);
                 }
             }
             &:nth-child(2n) .cell:nth-child(2n) {
