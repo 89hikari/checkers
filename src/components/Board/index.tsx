@@ -11,11 +11,11 @@ const Board = () => {
     const changeSide = useStore(state => state.changeSide);
     const reset = useStore(state => state.reset);
     const [selectedRow, setSelectedRow] = useState<number>();
-    const [newRow, setNewRow] = useState<number[]>();
+    const [newRow, setNewRow] = useState<number[]>([]);
     const [newCell, setNewCell] = useState<number>();
     const [curRow, setCurRow] = useState<number>();
     const [curCell, setCurCell] = useState<number>();
-    const [availiblePositions, setAvailiblePositions] = useState<number[]>();
+    const [availiblePositions, setAvailiblePositions] = useState<number[]>([]);
     const [resetModalVisible, setResetModalVisible] = useState<boolean>(false);
 
     const blacksScore = 12 - board.map(el => el.map(piece => piece === 'w' || piece === 'wb' ? 1 : 0).filter(p => !!p)).reduce((a, b) => [...a, ...b]).length;
@@ -25,15 +25,25 @@ const Board = () => {
         if (board[rowIndex][positionIntex][0] !== currentPlayer) return;
         setCurCell(positionIntex);
         setCurRow(rowIndex);
-        const availibleRowToMove = (board[rowIndex][positionIntex].length !== 2) ? (currentPlayer === 'b' ? [rowIndex - 1] : [rowIndex + 1]) : [rowIndex - 1, rowIndex + 1];
+        setNewRow([]);
+        setAvailiblePositions([]);
+        const availibleRowToMove = ((board[rowIndex][positionIntex].length !== 2) ? (currentPlayer === 'b' ? [rowIndex - 1] : [rowIndex + 1]) : [rowIndex - 1, rowIndex + 1]).filter(el => el >= 0);
         const availiblePos = [positionIntex - 1, positionIntex + 1];
         let availiblePosItems: string[] = [];
 
         try {
             availiblePosItems = availibleRowToMove.map(el => board[el]).filter(el => el !== undefined).map(el => [el[availiblePos[0]], el[availiblePos[1]]]).reduce((a, b) => [...a, ...b]).filter(el => !(el === currentPlayer || el === currentPlayer + 'b'));
-        } catch (error) { console.log(error); return; }
+        } catch (error) { return; }
 
         if (availiblePosItems.filter(el => !!el).length <= 2) {
+
+            if (board[rowIndex][positionIntex].length === 2) {
+                handleBossMoves(availibleRowToMove, availiblePos.filter(el => el > -1 && el < 8 && availibleRowToMove.filter(elem => board[elem] !== undefined).filter(elem => !!!board[elem][el]).length));
+                // setNewRow(availibleRowToMove);
+                // setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && availibleRowToMove.filter(elem => board[elem] !== undefined).filter(elem => !!!board[elem][el]).length));
+                return;
+            }
+
             if (availiblePosItems.filter(el => el === (currentPlayer === 'b' ? 'w' : 'b')).length != 0) {
                 for (let i = 0; i < availiblePos.length; i++) {
                     let checkCanEat = false;
@@ -46,7 +56,7 @@ const Board = () => {
                 return;
             }
             setNewRow(availibleRowToMove);
-            setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && availibleRowToMove.filter(elem => board[elem] !== undefined).map(elem => !board[elem][el]).length));
+            setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && availibleRowToMove.filter(elem => board[elem] !== undefined).filter(elem => !!!board[elem][el]).length));
             return;
         }
     }
@@ -71,6 +81,25 @@ const Board = () => {
         return false;
     }
 
+    const handleBossMoves = (rows: number[], cells: number[]) => {
+        let bossCells = [];
+
+        for (let i = 0; i < rows.length; i++) {
+            for (let j = 0; j < cells.length; j++) {
+                try {
+                    if (!!!board[rows[i]][cells[j]]) {
+                        bossCells.push(cells[j]);
+                    } else {
+                        
+                    }
+                } catch (error) { }
+            }
+        }
+
+        setNewRow(rows);
+        setAvailiblePositions(bossCells);
+    }
+
     const setPieceClassnames = (pieceVal: string, row: number, cell: number) => {
         return classNames(
             styles.cell,
@@ -84,15 +113,15 @@ const Board = () => {
     }
 
     const resetVars = () => {
-        setNewRow(undefined);
+        setNewRow([]);
         setNewCell(undefined);
         setCurRow(undefined);
         setCurCell(undefined);
-        setAvailiblePositions(undefined);
+        setAvailiblePositions([]);
     }
 
     useEffect(() => {
-        if (newRow !== undefined && newCell !== undefined && curRow !== undefined && curCell !== undefined && selectedRow !== undefined) {
+        if (newRow.length && newCell !== undefined && curRow !== undefined && curCell !== undefined && selectedRow !== undefined) {
             move(selectedRow, newCell, curRow, curCell);
             changeSide();
             resetVars();
@@ -126,7 +155,7 @@ const Board = () => {
                 <Typography.Title level={4}>Are you sure?</Typography.Title>
             </Modal>
             <div className={styles.boarddata}>
-                <Typography.Title level={3} className={styles.title}>Reds: <br/>{redsScore}</Typography.Title>
+                <Typography.Title level={3} className={styles.title}>Reds: <br />{redsScore}</Typography.Title>
                 <div className={styles.board}>
                     {board.map((row, i) =>
                         <div key={i} className={styles.row}>
@@ -134,7 +163,7 @@ const Board = () => {
                         </div>
                     )}
                 </div>
-                <Typography.Title level={3} className={styles.title}>Blacks: <br/>{blacksScore}</Typography.Title>
+                <Typography.Title level={3} className={styles.title}>Blacks: <br />{blacksScore}</Typography.Title>
             </div>
             <Typography.Title className={styles.title}>{currentPlayer === 'w' ? 'Reds' : 'Blacks'} turn</Typography.Title>
         </div>

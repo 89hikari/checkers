@@ -26,13 +26,11 @@ const createSlice: StateCreator<Slice, [['zustand/devtools', never]], []> = (set
         let isBoss = board[initialRow][initialCell].length === 2;
         board[initialRow][initialCell] = '';
         const curPl = get().currentPlayer;
-        board[newRow][newCell] = curPl;
+        board[newRow][newCell] = !isBoss ? curPl : curPl + 'b';
 
-        if ((newRow === 0 && curPl === 'b') || (newRow === 7 && curPl === 'w')) {
+        if ((newRow === 0 && curPl === 'b') || (newRow === 7 && curPl === 'w') && !isBoss) {
             board[newRow][newCell] = curPl + 'b';
         }
-
-        if (isBoss) board[newRow][newCell] += 'b';
 
         const possibleEatenRow = Math.abs(newRow - initialRow) === 2;
         const possibleEatenCell = Math.abs(newCell - initialCell) === 2;
