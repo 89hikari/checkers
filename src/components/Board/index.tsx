@@ -11,52 +11,58 @@ const Board = () => {
     const changeSide = useStore(state => state.changeSide);
     const reset = useStore(state => state.reset);
     const [selectedRow, setSelectedRow] = useState<number>();
-    const [newRow, setNewRow] = useState<number[]>([]);
+    const [newRow, setNewRow] = useState<number>();
     const [newCell, setNewCell] = useState<number>();
     const [curRow, setCurRow] = useState<number>();
     const [curCell, setCurCell] = useState<number>();
     const [availiblePositions, setAvailiblePositions] = useState<number[]>([]);
     const [resetModalVisible, setResetModalVisible] = useState<boolean>(false);
+    const [selectedItem, setSelectedItem] = useState<string>('');
 
-    const blacksScore = 12 - board.map(el => el.map(piece => piece === 'w' || piece === 'wb' ? 1 : 0).filter(p => !!p)).reduce((a, b) => [...a, ...b]).length;
-    const redsScore = 12 - board.map(el => el.map(piece => piece === 'b' || piece === 'bb' ? 1 : 0).filter(p => !!p)).reduce((a, b) => [...a, ...b]).length;
+    const getCell = (row: number, cell: number) => board[row][cell];
+
+    const getScore = (player: string) => {
+        return 12 - board
+            .map(el =>
+                el.map(piece => piece === player || piece === player + 'b' ? 1 : 0)
+                    .filter(p => !!p))
+            .reduce((a, b) => [...a, ...b])
+            .length;
+    }
+
+    const blacksScore = getScore('w');
+    const redsScore = getScore('b');
+
 
     const getAvailiblePositions = (rowIndex: number, positionIntex: number) => {
-        if (board[rowIndex][positionIntex][0] !== currentPlayer) return;
+        if (getCell(rowIndex, positionIntex)[0] !== currentPlayer) return;
+
         setCurCell(positionIntex);
         setCurRow(rowIndex);
-        setNewRow([]);
+        setNewRow(undefined);
         setAvailiblePositions([]);
-        const availibleRowToMove = ((board[rowIndex][positionIntex].length !== 2) ? (currentPlayer === 'b' ? [rowIndex - 1] : [rowIndex + 1]) : [rowIndex - 1, rowIndex + 1]).filter(el => el >= 0);
+        const availibleRowToMove = currentPlayer === 'b' ? rowIndex - 1 : rowIndex + 1;
         const availiblePos = [positionIntex - 1, positionIntex + 1];
         let availiblePosItems: string[] = [];
 
         try {
-            availiblePosItems = availibleRowToMove.map(el => board[el]).filter(el => el !== undefined).map(el => [el[availiblePos[0]], el[availiblePos[1]]]).reduce((a, b) => [...a, ...b]).filter(el => !(el === currentPlayer || el === currentPlayer + 'b'));
-        } catch (error) { return; }
+            availiblePosItems = availiblePos.map(el => getCell(availibleRowToMove, el)).filter(el => el !== currentPlayer);
+        } catch (ex) { return }
 
         if (availiblePosItems.filter(el => !!el).length <= 2) {
-
-            if (board[rowIndex][positionIntex].length === 2) {
-                handleBossMoves(availibleRowToMove, availiblePos.filter(el => el > -1 && el < 8 && availibleRowToMove.filter(elem => board[elem] !== undefined).filter(elem => !!!board[elem][el]).length));
-                // setNewRow(availibleRowToMove);
-                // setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && availibleRowToMove.filter(elem => board[elem] !== undefined).filter(elem => !!!board[elem][el]).length));
+            if (getCell(rowIndex, positionIntex).length === 2) {
                 return;
             }
-
             if (availiblePosItems.filter(el => el === (currentPlayer === 'b' ? 'w' : 'b')).length != 0) {
+                let checkCanEat = false;
                 for (let i = 0; i < availiblePos.length; i++) {
-                    let checkCanEat = false;
-                    availibleRowToMove.forEach(e => {
-                        checkCanEat = getNextLayerAvailibleItems(rowIndex, e, positionIntex, availiblePos[i]);
-                        if (checkCanEat) return;
-                    });
+                    checkCanEat = getNextLayerAvailibleItems(rowIndex, availibleRowToMove, positionIntex, availiblePos[i]);
                     if (checkCanEat) break;
                 }
                 return;
             }
             setNewRow(availibleRowToMove);
-            setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && availibleRowToMove.filter(elem => board[elem] !== undefined).filter(elem => !!!board[elem][el]).length));
+            setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && !getCell(availibleRowToMove, el)));
             return;
         }
     }
@@ -65,39 +71,20 @@ const Board = () => {
         const nextRow = (newRowIndex < oldRowIndex ? newRowIndex - 1 : newRowIndex + 1);
         const nextCell = (nexPosIndex < oldPosIndex ? nexPosIndex - 1 : nexPosIndex + 1);
         try {
-            if (board[newRowIndex][nexPosIndex] === (currentPlayer === 'b' ? 'w' : 'b')) {
-                if (board[nextRow][nextCell] === '') {
-                    setNewRow([nextRow]);
+            if (getCell(newRowIndex, nexPosIndex) === (currentPlayer === 'b' ? 'w' : 'b')) {
+                if (getCell(nextRow, nextCell) === '') {
+                    setNewRow(nextRow);
                     setAvailiblePositions([nextCell]);
                     return true;
                 }
                 return false;
             }
-        } catch (error) { }
+        } catch (ex) { return false }
 
-        setNewRow([newRowIndex]);
+        setNewRow(newRowIndex);
         setAvailiblePositions([nexPosIndex]);
 
         return false;
-    }
-
-    const handleBossMoves = (rows: number[], cells: number[]) => {
-        let bossCells = [];
-
-        for (let i = 0; i < rows.length; i++) {
-            for (let j = 0; j < cells.length; j++) {
-                try {
-                    if (!!!board[rows[i]][cells[j]]) {
-                        bossCells.push(cells[j]);
-                    } else {
-                        
-                    }
-                } catch (error) { }
-            }
-        }
-
-        setNewRow(rows);
-        setAvailiblePositions(bossCells);
     }
 
     const setPieceClassnames = (pieceVal: string, row: number, cell: number) => {
@@ -107,13 +94,13 @@ const Board = () => {
             { [styles.black]: pieceVal === 'b' || pieceVal === 'bb' },
             { [styles.boss]: pieceVal === 'bb' || pieceVal === 'wb' },
             { [styles.white]: pieceVal === 'w' || pieceVal === 'wb' },
-            { [styles.possible_move]: newRow?.indexOf(row) !== -1 && availiblePositions?.some(el => el === cell) },
+            { [styles.possible_move]: row === newRow && availiblePositions?.some(el => el === cell) },
             { [styles.selected]: row === curRow && cell === curCell }
         );
     }
 
     const resetVars = () => {
-        setNewRow([]);
+        setNewRow(undefined);
         setNewCell(undefined);
         setCurRow(undefined);
         setCurCell(undefined);
@@ -121,16 +108,16 @@ const Board = () => {
     }
 
     useEffect(() => {
-        if (newRow.length && newCell !== undefined && curRow !== undefined && curCell !== undefined && selectedRow !== undefined) {
+        if (newCell !== undefined && curRow !== undefined && curCell !== undefined && selectedRow !== undefined) {
             move(selectedRow, newCell, curRow, curCell);
             changeSide();
             resetVars();
         }
-    }, [newCell && selectedRow]);
+    }, [newCell]);
 
 
     const detectPieceAction = (row: number, cell: number) => {
-        if (availiblePositions?.some(el => el === cell) && newRow?.indexOf(row) !== -1) {
+        if (availiblePositions?.some(el => el === cell) && row === newRow) {
             setNewCell(cell);
             setSelectedRow(row);
             return;
