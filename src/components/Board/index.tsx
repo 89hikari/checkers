@@ -15,11 +15,14 @@ const Board = () => {
     const [newCell, setNewCell] = useState<number>();
     const [curRow, setCurRow] = useState<number>();
     const [curCell, setCurCell] = useState<number>();
+    const [bossNewRows, setBossNewRows] = useState<number[]>([]);
+    const [bossNewCells, setBossNewCells] = useState<number[]>([]);
     const [availiblePositions, setAvailiblePositions] = useState<number[]>([]);
     const [resetModalVisible, setResetModalVisible] = useState<boolean>(false);
-    const [selectedItem, setSelectedItem] = useState<string>('');
 
     const getCell = (row: number, cell: number) => board[row][cell];
+    const isBoss = (row: number, cell: number) => board[row][cell].length === 2;
+    const getOpponent = () => currentPlayer === 'b' ? 'w' : 'b';
 
     const getScore = (player: string) => {
         return 12 - board
@@ -39,62 +42,133 @@ const Board = () => {
 
         setCurCell(positionIntex);
         setCurRow(rowIndex);
-        setNewRow(undefined);
+        setBossNewRows([]);
+        setBossNewCells([]);
         setAvailiblePositions([]);
-        const availibleRowToMove = currentPlayer === 'b' ? rowIndex - 1 : rowIndex + 1;
+        setNewRow(undefined);
         const availiblePos = [positionIntex - 1, positionIntex + 1];
-        let availiblePosItems: string[] = [];
+        const opponent = getOpponent();
 
-        try {
-            availiblePosItems = availiblePos.map(el => getCell(availibleRowToMove, el)).filter(el => el !== currentPlayer);
-        } catch (ex) { return }
+        if (!isBoss(rowIndex, positionIntex)) {
+            const availibleRowToMove = currentPlayer === 'b' ? rowIndex - 1 : rowIndex + 1;
+            let availiblePosItems: string[] = [];
 
-        if (availiblePosItems.filter(el => !!el).length <= 2) {
-            if (getCell(rowIndex, positionIntex).length === 2) {
-                return;
-            }
-            if (availiblePosItems.filter(el => el === (currentPlayer === 'b' ? 'w' : 'b')).length != 0) {
+            try {
+                availiblePosItems = availiblePos.map(el => getCell(availibleRowToMove, el)).filter(el => el !== currentPlayer);
+            } catch (ex) { return }
+
+            if (availiblePosItems.filter(el => (el === opponent || el === opponent + 'b')).length != 0) {
                 let checkCanEat = false;
                 for (let i = 0; i < availiblePos.length; i++) {
-                    checkCanEat = getNextLayerAvailibleItems(rowIndex, availibleRowToMove, positionIntex, availiblePos[i]);
-                    if (checkCanEat) break;
+                    checkCanEat = getNextLayerAvailibleItems(rowIndex, availibleRowToMove, positionIntex, availiblePos[i], false);
+                    if (checkCanEat) return;
                 }
                 return;
             }
             setNewRow(availibleRowToMove);
             setAvailiblePositions(availiblePos.filter(el => el > -1 && el < 8 && !getCell(availibleRowToMove, el)));
-            return;
+        } else {
+            const availibleRowsToMove = [rowIndex - 1, rowIndex + 1].filter(el => el > -1 && el < 8);
+
+            let availiblePosItems: string[] = [];
+            let bossRows: number[] = [];
+            let bossPos: number[] = [];
+
+            try {
+                availiblePosItems =
+                    availibleRowsToMove
+                        .map(el => board[el])
+                        .filter(el => el !== undefined)
+                        .map(el => [el[availiblePos[0]], el[availiblePos[1]]])
+                        .reduce((a, b) => [...a, ...b])
+                        .filter(el => !(el === currentPlayer || el === currentPlayer + 'b'));
+            } catch (ex) { return }
+
+            if (availiblePosItems.filter(el => (el === opponent || el === opponent + 'b')).length != 0) {
+                for (let i = 0; i < availiblePos.length; i++) {
+                    availibleRowsToMove.forEach(e => {
+                        let checkCanEat = getNextLayerAvailibleItems(rowIndex, e, positionIntex, availiblePos[i], true, bossRows, bossPos);
+                    });
+                }
+                setBossNewRows(bossRows);
+                setBossNewCells(bossPos);
+                return;
+            }
+
+            setBossNewRows(availibleRowsToMove);
+            setBossNewCells(availiblePos);
         }
     }
 
-    const getNextLayerAvailibleItems = (oldRowIndex: number, newRowIndex: number, oldPosIndex: number, nexPosIndex: number) => {
+    const checkBossDiagonally = (row: number, cell: number) => {
+        if (Math.abs(row % 2) === 0) {
+            return Math.abs(cell % 2) !== 0;
+        } else {
+            return Math.abs(cell % 2) === 0;
+        }
+    }
+
+    const getNextLayerAvailibleItems = (oldRowIndex: number, newRowIndex: number, oldPosIndex: number, nexPosIndex: number, boss: boolean, bossRows: number[] = [], bossPos: number[] = []) => {
+        const cell = getCell(newRowIndex, nexPosIndex);
+        if (cell === currentPlayer || cell === currentPlayer + 'b') return false;
+        const opponent = getOpponent();
         const nextRow = (newRowIndex < oldRowIndex ? newRowIndex - 1 : newRowIndex + 1);
         const nextCell = (nexPosIndex < oldPosIndex ? nexPosIndex - 1 : nexPosIndex + 1);
-        try {
-            if (getCell(newRowIndex, nexPosIndex) === (currentPlayer === 'b' ? 'w' : 'b')) {
-                if (getCell(nextRow, nextCell) === '') {
-                    setNewRow(nextRow);
-                    setAvailiblePositions([nextCell]);
-                    return true;
+        const isNextCellOpponent = cell === opponent || cell === opponent + 'b';
+
+        if (boss) {
+            try {
+                if (isNextCellOpponent) {
+                    if (getCell(nextRow, nextCell) === '') {
+                        bossRows.push(nextRow);
+                        bossPos.push(nextCell);
+                    }
+                    return false;
                 }
-                return false;
-            }
-        } catch (ex) { return false }
+            } catch (ex) { return false; }
 
-        setNewRow(newRowIndex);
-        setAvailiblePositions([nexPosIndex]);
+            bossRows.push(newRowIndex);
+            bossPos.push(nexPosIndex);
 
-        return false;
+            return false;
+        } else {
+            try {
+                if (isNextCellOpponent) {
+                    if (getCell(nextRow, nextCell) === '') {
+                        setNewRow(nextRow);
+                        setAvailiblePositions([nextCell]);
+                        return true;
+                    }
+                    return false;
+                }
+            } catch (ex) { return false }
+
+            setNewRow(newRowIndex);
+            setAvailiblePositions([nexPosIndex]);
+
+            return false;
+        }
     }
 
     const setPieceClassnames = (pieceVal: string, row: number, cell: number) => {
+
+        let bossMoved:number[][] = [];
+        try {
+            bossMoved = bossNewRows.map(el => bossNewCells.map(e => [el, e])).reduce((a, b) => [...a, ...b]).filter(el => checkBossDiagonally(el[0], el[1]))
+        } catch (error) { }
+
+        const arrEqual = JSON.stringify(bossMoved.filter(el => !board[el[0]][el[1]])).includes(JSON.stringify([row, cell]));
+
         return classNames(
             styles.cell,
             { [styles.piece]: pieceVal },
             { [styles.black]: pieceVal === 'b' || pieceVal === 'bb' },
             { [styles.boss]: pieceVal === 'bb' || pieceVal === 'wb' },
             { [styles.white]: pieceVal === 'w' || pieceVal === 'wb' },
-            { [styles.possible_move]: row === newRow && availiblePositions?.some(el => el === cell) },
+            {
+                [styles.possible_move]:
+                (row === newRow && availiblePositions.indexOf(cell) !== -1) || arrEqual
+            },
             { [styles.selected]: row === curRow && cell === curCell }
         );
     }
@@ -104,6 +178,8 @@ const Board = () => {
         setNewCell(undefined);
         setCurRow(undefined);
         setCurCell(undefined);
+        setBossNewRows([]);
+        setBossNewCells([]);
         setAvailiblePositions([]);
     }
 
@@ -115,13 +191,20 @@ const Board = () => {
         }
     }, [newCell]);
 
-
     const detectPieceAction = (row: number, cell: number) => {
-        if (availiblePositions?.some(el => el === cell) && row === newRow) {
+        let bossMoved:number[][] = [];
+        try {
+            bossMoved = bossNewRows.map(el => bossNewCells.map(e => [el, e])).reduce((a, b) => [...a, ...b]).filter(el => checkBossDiagonally(el[0], el[1]))
+        } catch (error) { }
+
+        const arrEqual = JSON.stringify(bossMoved.filter(el => !board[el[0]][el[1]])).includes(JSON.stringify([row, cell]));
+        
+        if (availiblePositions.indexOf(cell) !== -1 && row === newRow || arrEqual) {
             setNewCell(cell);
             setSelectedRow(row);
             return;
         }
+
         getAvailiblePositions(row, cell);
     }
 
